@@ -116,7 +116,9 @@ public final class MainLauncherTest {
         final ArrayList<String> cmd =
                 test.util.Util.createApplicationLaunchCommand(
                         d.testAppName,
-                        d.testPldrName);
+                        d.testPldrName,
+                        null
+                        );
 
         final ProcessBuilder builder = new ProcessBuilder(cmd);
 
