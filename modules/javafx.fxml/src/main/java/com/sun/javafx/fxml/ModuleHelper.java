@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.javafx.fxml;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 public class ModuleHelper {
     private static final Method getModuleMethod;
@@ -36,7 +38,10 @@ public class ModuleHelper {
     private static final boolean verbose;
 
     static {
-        verbose = Boolean.getBoolean("javafx.verbose");
+        @SuppressWarnings("removal")
+        boolean tmp = AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
+                Boolean.getBoolean("javafx.verbose"));
+        verbose = tmp;
 
         if (verbose) {
             System.err.println("" + ModuleHelper.class.getName() + " : <clinit>");
