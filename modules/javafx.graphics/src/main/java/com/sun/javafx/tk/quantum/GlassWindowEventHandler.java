@@ -33,9 +33,11 @@ import com.sun.glass.ui.Window.Level;
 
 import com.sun.javafx.tk.FocusCause;
 
-import java.util.function.Supplier;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
-class GlassWindowEventHandler extends Window.EventHandler implements Supplier<Void> {
+class GlassWindowEventHandler extends Window.EventHandler implements PrivilegedAction<Void> {
 
     private final WindowStage stage;
 
@@ -47,7 +49,7 @@ class GlassWindowEventHandler extends Window.EventHandler implements Supplier<Vo
     }
 
     @Override
-    public Void get() {
+    public Void run() {
         if (stage == null || stage.stageListener == null) {
             return null;
         }
@@ -153,22 +155,31 @@ class GlassWindowEventHandler extends Window.EventHandler implements Supplier<Vo
         return null;
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void handleLevelEvent(int level) {
         QuantumToolkit.runWithoutRenderLock(() -> {
-            stage.stageListener.changedAlwaysOnTop(level != Level.NORMAL);
-            return null;
+            AccessControlContext acc = stage.getAccessControlContext();
+            return AccessController.doPrivileged((PrivilegedAction<Void>)() -> {
+                stage.stageListener.changedAlwaysOnTop(level != Level.NORMAL);
+                return null;
+            } , acc);
         });
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void handleWindowEvent(final Window window, final long time, final int type) {
         this.window = window;
         this.type = type;
 
-        QuantumToolkit.runWithoutRenderLock(this);
+        QuantumToolkit.runWithoutRenderLock(() -> {
+            AccessControlContext acc = stage.getAccessControlContext();
+            return AccessController.doPrivileged(this, acc);
+        });
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void handleScreenChangedEvent(Window window, long time, Screen oldScreen, Screen newScreen) {
         GlassScene scene = stage.getScene();
@@ -181,8 +192,11 @@ class GlassWindowEventHandler extends Window.EventHandler implements Supplier<Vo
         }
 
         QuantumToolkit.runWithoutRenderLock(() -> {
-            stage.stageListener.changedScreen(oldScreen, newScreen);
-            return null;
+            AccessControlContext acc = stage.getAccessControlContext();
+            return AccessController.doPrivileged((PrivilegedAction<Void>)() -> {
+                stage.stageListener.changedScreen(oldScreen, newScreen);
+                return null;
+            } , acc);
         });
     }
 }

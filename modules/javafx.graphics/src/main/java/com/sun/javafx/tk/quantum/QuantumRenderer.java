@@ -25,6 +25,8 @@
 
 package com.sun.javafx.tk.quantum;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -53,8 +55,10 @@ import java.util.HashMap;
  * Quantum Renderer
  */
 final class QuantumRenderer extends ThreadPoolExecutor  {
+    @SuppressWarnings("removal")
     private static boolean usePurgatory = // TODO - deprecate
-        Boolean.getBoolean("decora.purgatory");
+        AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> Boolean.getBoolean("decora.purgatory"));
+
 
     private static final AtomicReference<QuantumRenderer> instanceReference =
                                     new AtomicReference<>(null);
@@ -129,16 +133,20 @@ final class QuantumRenderer extends ThreadPoolExecutor  {
     private class QuantumThreadFactory implements ThreadFactory {
         final AtomicInteger threadNumber = new AtomicInteger(0);
 
+        @SuppressWarnings("removal")
         @Override public Thread newThread(Runnable r) {
             final PipelineRunnable pipeline = new PipelineRunnable(r);
-            Thread th = new Thread(pipeline);
-            th.setName("QuantumRenderer-" + threadNumber.getAndIncrement());
-            th.setDaemon(true);
-            th.setUncaughtExceptionHandler((t, thr) -> {
-                System.err.println(t.getName() + " uncaught: " + thr.getClass().getName());
-                thr.printStackTrace();
-            });
-            _renderer = th;
+            _renderer =
+                AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
+                    Thread th = new Thread(pipeline);
+                    th.setName("QuantumRenderer-" + threadNumber.getAndIncrement());
+                    th.setDaemon(true);
+                    th.setUncaughtExceptionHandler((t, thr) -> {
+                        System.err.println(t.getName() + " uncaught: " + thr.getClass().getName());
+                        thr.printStackTrace();
+                    });
+                    return th;
+                });
 
             assert threadNumber.get() == 1;
 
@@ -185,9 +193,12 @@ final class QuantumRenderer extends ThreadPoolExecutor  {
         }
     }
 
+    @SuppressWarnings("removal")
     protected void stopRenderer() {
-        shutdown();
-
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            shutdown();
+            return null;
+        });
         if (PrismSettings.verbose) {
             System.out.println("QuantumRenderer: shutdown");
         }

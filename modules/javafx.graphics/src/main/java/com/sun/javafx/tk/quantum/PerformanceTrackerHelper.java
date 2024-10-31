@@ -28,6 +28,9 @@ package com.sun.javafx.tk.quantum;
 import com.sun.javafx.tk.Toolkit;
 import com.sun.prism.impl.PrismSettings;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * Class containing implementation for logging, and performance tracking.
  */
@@ -43,20 +46,42 @@ abstract class PerformanceTrackerHelper {
     }
 
     private static PerformanceTrackerHelper createInstance() {
-        try {
-            if (PrismSettings.perfLog != null) {
-                final PerformanceTrackerHelper trackerImpl = new PerformanceTrackerDefaultImpl();
-                if (PrismSettings.perfLogExitFlush) {
-                    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                        trackerImpl.outputLog();
-                    }));
-                }
-                return trackerImpl;
-            }
-        }catch (Throwable t) {
+        @SuppressWarnings("removal")
+        PerformanceTrackerHelper trackerImpl = AccessController.doPrivileged(
+                new PrivilegedAction<PerformanceTrackerHelper>() {
+
+                    @Override
+                    public PerformanceTrackerHelper run() {
+                        try {
+                            if (PrismSettings.perfLog != null) {
+                                final PerformanceTrackerHelper trackerImpl =
+                                        new PerformanceTrackerDefaultImpl();
+
+                                if (PrismSettings.perfLogExitFlush) {
+                                    Runtime.getRuntime().addShutdownHook(
+                                            new Thread() {
+
+                                                @Override
+                                                public void run() {
+                                                    trackerImpl.outputLog();
+                                                }
+                                            });
+                                }
+
+                                return trackerImpl;
+                            }
+                        } catch (Throwable t) {
+                        }
+
+                        return null;
+                    }
+                });
+
+        if (trackerImpl == null) {
+            trackerImpl = new PerformanceTrackerDummyImpl();
         }
 
-        return new PerformanceTrackerDummyImpl();
+        return trackerImpl;
     }
 
     public abstract void logEvent(final String s);
@@ -105,7 +130,9 @@ abstract class PerformanceTrackerHelper {
                 // Attempt to log launchTime, if not set already
                 if (PerformanceLogger.getStartTime() <= 0) {
                     // Standalone apps record launch time as sysprop
-                    String launchTimeString = System.getProperty("launchTime");
+                    @SuppressWarnings("removal")
+                    String launchTimeString = AccessController.doPrivileged(
+                            (PrivilegedAction<String>) () -> System.getProperty("launchTime"));
 
                     if (launchTimeString != null
                             && !launchTimeString.equals("")) {

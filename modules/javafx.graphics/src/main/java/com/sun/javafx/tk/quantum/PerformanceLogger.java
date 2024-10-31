@@ -85,12 +85,28 @@ public class PerformanceLogger {
     private static long baseTime;
 
     static {
-        String perfLoggingProp = System.getProperty("sun.perflog");
+        @SuppressWarnings("removal")
+        String perfLoggingProp =
+            java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<String>() {
+                        @Override
+                        public String run() {
+                            return System.getProperty("sun.perflog");
+                        }
+                    });
         if (perfLoggingProp != null) {
             perfLoggingOn = true;
 
             // Check if we should use nanoTime
-            String perfNanoProp = System.getProperty("sun.perflog.nano");
+            @SuppressWarnings("removal")
+            String perfNanoProp =
+                java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<String>() {
+                        @Override
+                        public String run() {
+                            return System.getProperty("sun.perflog.nano");
+                        }
+                    });
             if (perfNanoProp != null) {
                 useNanoTime = true;
             }
@@ -101,15 +117,23 @@ public class PerformanceLogger {
             }
             if (logFileName != null) {
                 if (logWriter == null) {
-                    try {
-                        File logFile = new File(logFileName);
-                        logFile.createNewFile();
-                        logWriter = new FileWriter(logFile);
-                    } catch (Exception e) {
-                        System.out.println(e + ": Creating logfile " +
-                                           logFileName +
-                                           ".  Log to console");
-                    }
+                    @SuppressWarnings("removal")
+                    var dummy = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<Void>() {
+                        @Override
+                        public Void run() {
+                            try {
+                                File logFile = new File(logFileName);
+                                logFile.createNewFile();
+                                logWriter = new FileWriter(logFile);
+                            } catch (Exception e) {
+                                System.out.println(e + ": Creating logfile " +
+                                                   logFileName +
+                                                   ".  Log to console");
+                            }
+                            return null;
+                        }
+                    });
                 }
             }
             if (logWriter == null) {
