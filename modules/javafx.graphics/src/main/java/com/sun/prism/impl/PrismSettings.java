@@ -25,6 +25,8 @@
 
 package com.sun.prism.impl;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -110,7 +112,10 @@ public final class PrismSettings {
     }
 
     static {
-        final Properties systemProperties = System.getProperties();
+        @SuppressWarnings("removal")
+        final Properties systemProperties =
+                (Properties) AccessController.doPrivileged(
+                        (PrivilegedAction) () -> System.getProperties());
 
         /* Vsync */
         isVsyncEnabled  = getBoolean(systemProperties, "prism.vsync", true)

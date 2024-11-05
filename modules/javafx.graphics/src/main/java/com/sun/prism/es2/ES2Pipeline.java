@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import com.sun.prism.ResourceFactory;
 import com.sun.prism.impl.PrismSettings;
 import com.sun.javafx.PlatformUtil;
 import java.util.List;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 
 public class ES2Pipeline extends GraphicsPipeline {
@@ -46,20 +48,24 @@ public class ES2Pipeline extends GraphicsPipeline {
     private static boolean isEglfb = false;
 
     static {
-        String libName = "prism_es2";
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            String libName = "prism_es2";
 
-        String eglType = PlatformUtil.getEmbeddedType();
-        if ("monocle".equals(eglType)) {
-            isEglfb = true;
-            libName = "prism_es2_monocle";
-        }
-        if (PrismSettings.verbose) {
-            System.out.println("Loading ES2 native library ... " + libName);
-        }
-        NativeLibLoader.loadLibrary(libName);
-        if (PrismSettings.verbose) {
-            System.out.println("\tsucceeded.");
-        }
+            String eglType = PlatformUtil.getEmbeddedType();
+            if ("monocle".equals(eglType)) {
+                isEglfb = true;
+                libName = "prism_es2_monocle";
+            }
+            if (PrismSettings.verbose) {
+                System.out.println("Loading ES2 native library ... " + libName);
+            }
+            NativeLibLoader.loadLibrary(libName);
+            if (PrismSettings.verbose) {
+                System.out.println("\tsucceeded.");
+            }
+            return null;
+        });
 
         // Initialize the prism-es2 pipe and a handler of it
         glFactory = GLFactory.getFactory();

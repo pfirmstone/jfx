@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -77,19 +80,26 @@ class FontFileWriter implements FontConstants {
         return file;
     }
 
-    public File openFile() throws IOException {
+    @SuppressWarnings("removal")
+    public File openFile() throws PrivilegedActionException {
         pos = 0;
         writtenBytes = 0;
-        try {
-            file = Files.createTempFile("+JXF", ".tmp").toFile();
-        } catch (IOException e) {
-            // don't reveal temporary directory location
-            throw new IOException("Unable to create temporary file");
-        }
+        file = AccessController.doPrivileged(
+                (PrivilegedExceptionAction<File>) () -> {
+                    try {
+                        return Files.createTempFile("+JXF", ".tmp").toFile();
+                    } catch (IOException e) {
+                        // don't reveal temporary directory location
+                        throw new IOException("Unable to create temporary file");
+                    }
+                }
+        );
         if (tracker != null) {
             tracker.add(file);
         }
-        raFile = new RandomAccessFile(file, "rw");
+        raFile = AccessController.doPrivileged(
+                (PrivilegedExceptionAction<RandomAccessFile>) () -> new RandomAccessFile(file, "rw")
+        );
         if (tracker != null) {
             tracker.set(file, raFile);
         }
@@ -114,6 +124,7 @@ class FontFileWriter implements FontConstants {
         }
     }
 
+    @SuppressWarnings("removal")
     public void deleteFile() {
         if (file != null) {
             if (tracker != null) {
@@ -124,7 +135,12 @@ class FontFileWriter implements FontConstants {
             } catch (Exception e) {
             }
             try {
-                file.delete();
+                AccessController.doPrivileged(
+                        (PrivilegedExceptionAction<Void>) () -> {
+                            file.delete();
+                            return null;
+                        }
+                );
                 if (PrismFontFactory.debugFonts) {
                     System.err.println("Temp file delete: " + file.getPath());
                 }
@@ -326,13 +342,19 @@ class FontFileWriter implements FontConstants {
             private static HashMap<File, RandomAccessFile> files = new HashMap<>();
 
             private static Thread t = null;
+            @SuppressWarnings("removal")
             static void init() {
                 if (t == null) {
                     // Add a shutdown hook to remove the temp file.
-                    t = new Thread(() -> {
-                        runHooks();
-                    });
-                    Runtime.getRuntime().addShutdownHook(t);
+                    java.security.AccessController.doPrivileged(
+                            (java.security.PrivilegedAction) () -> {
+                                t = new Thread(() -> {
+                                    runHooks();
+                                });
+                                Runtime.getRuntime().addShutdownHook(t);
+                                return null;
+                            }
+                    );
                 }
             }
 

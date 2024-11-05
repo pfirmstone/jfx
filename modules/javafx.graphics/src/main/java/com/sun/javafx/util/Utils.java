@@ -25,6 +25,8 @@
 
 package com.sun.javafx.util;
 
+import static com.sun.javafx.FXPermissions.ACCESS_WINDOW_LIST_PERMISSION;
+
 import javafx.application.Platform;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
@@ -43,6 +45,8 @@ import javafx.stage.Window;
 import java.math.BigDecimal;
 import java.util.List;
 import com.sun.javafx.PlatformUtil;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import com.sun.glass.utils.NativeLibLoader;
 import com.sun.prism.impl.PrismSettings;
 
@@ -678,7 +682,11 @@ public class Utils {
     }
 
     public static boolean hasFullScreenStage(final Screen screen) {
-        final List<Window> allWindows = Window.getWindows();
+        @SuppressWarnings("removal")
+        final List<Window> allWindows = AccessController.doPrivileged(
+                (PrivilegedAction<List<Window>>) () -> Window.getWindows(),
+                null,
+                ACCESS_WINDOW_LIST_PERMISSION);
 
         for (final Window window : allWindows) {
             if (window instanceof Stage) {
@@ -987,16 +995,20 @@ public class Utils {
         return new String(dst, 0, dstIndex);
     }
 
+    @SuppressWarnings("removal")
     public static synchronized void loadNativeSwingLibrary() {
-        String libName = "prism_common";
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            String libName = "prism_common";
 
-        if (PrismSettings.verbose) {
-            System.out.println("Loading Prism common native library ...");
-        }
-        NativeLibLoader.loadLibrary(libName);
-        if (PrismSettings.verbose) {
-            System.out.println("\tsucceeded.");
-        }
+            if (PrismSettings.verbose) {
+                System.out.println("Loading Prism common native library ...");
+            }
+            NativeLibLoader.loadLibrary(libName);
+            if (PrismSettings.verbose) {
+                System.out.println("\tsucceeded.");
+            }
+            return null;
+        });
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 
 package com.sun.marlin;
 
+import java.security.AccessController;
 import static com.sun.marlin.MarlinUtils.logInfo;
 import com.sun.util.reentrant.ReentrantContextProvider;
 import com.sun.util.reentrant.ReentrantContextProviderCLQ;
 import com.sun.util.reentrant.ReentrantContextProviderTL;
 import com.sun.javafx.geom.PathIterator;
 import com.sun.prism.BasicStroke;
+import java.security.PrivilegedAction;
 
 /**
  * Marlin RendererEngine implementation (derived from Pisces)
@@ -72,8 +74,12 @@ public final class DMarlinRenderingEngine implements MarlinConst
         USE_THREAD_LOCAL = MarlinProperties.isUseThreadLocal();
 
         // Soft reference by default:
-        String value = System.getProperty("prism.marlin.useRef");
-        final String refType = (value == null) ? "soft" : value;
+        @SuppressWarnings("removal")
+        final String refType = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> {
+                String value = System.getProperty("prism.marlin.useRef");
+                return (value == null) ? "soft" : value;
+            });
         switch (refType) {
             default:
             case "soft":

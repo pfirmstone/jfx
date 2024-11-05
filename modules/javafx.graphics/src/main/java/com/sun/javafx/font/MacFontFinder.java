@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.javafx.font;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -34,7 +36,13 @@ import com.sun.glass.utils.NativeLibLoader;
 public class MacFontFinder {
 
     static {
-        NativeLibLoader.loadLibrary("javafx_font");
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(
+                (PrivilegedAction<Void>) () -> {
+                    NativeLibLoader.loadLibrary("javafx_font");
+                    return null;
+                }
+        );
     }
 
     private static final int SystemFontType = 2; /*kCTFontSystemFontType*/
