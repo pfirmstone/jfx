@@ -57,6 +57,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.nio.IntBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 
@@ -235,7 +237,10 @@ public class JFXPanel extends JComponent {
         if (fxInitialized) {
             return;
         }
-        EventQueue eventQueue = java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue();
+        @SuppressWarnings("removal")
+        EventQueue eventQueue = AccessController.doPrivileged(
+                                (PrivilegedAction<EventQueue>) java.awt.Toolkit
+                                .getDefaultToolkit()::getSystemEventQueue);
         if (eventQueue.isDispatchThread()) {
             // We won't block EDT by FX initialization
             SecondaryLoop secondaryLoop = eventQueue.createSecondaryLoop();
@@ -316,7 +321,10 @@ public class JFXPanel extends JComponent {
         if (Toolkit.getToolkit().isFxUserThread()) {
             setSceneImpl(newScene);
         } else {
-            EventQueue eventQueue = java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue();
+            @SuppressWarnings("removal")
+            EventQueue eventQueue = AccessController.doPrivileged(
+                    (PrivilegedAction<EventQueue>) java.awt.Toolkit
+                            .getDefaultToolkit()::getSystemEventQueue);
             SecondaryLoop secondaryLoop = eventQueue.createSecondaryLoop();
             Platform.runLater(() -> {
                 try {
@@ -941,14 +949,18 @@ public class JFXPanel extends JComponent {
      * method is invoked, the chain of parent components is set up with
      * KeyboardAction event listeners.
      */
+    @SuppressWarnings("removal")
     @Override
     public void addNotify() {
         super.addNotify();
 
         registerFinishListener();
 
-        getToolkit().addAWTEventListener(ungrabListener, jfxPanelIOP.getMask());
-
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            JFXPanel.this.getToolkit().addAWTEventListener(ungrabListener,
+                                               jfxPanelIOP.getMask());
+            return null;
+        });
         updateComponentSize(); // see RT-23603
         SwingNodeHelper.runOnFxThread(() -> {
             if ((stage != null) && !stage.isShowing()) {
@@ -972,6 +984,7 @@ public class JFXPanel extends JComponent {
      * When this method is invoked, any KeyboardActions set up in the the
      * chain of parent components are removed.
      */
+    @SuppressWarnings("removal")
     @Override public void removeNotify() {
         SwingNodeHelper.runOnFxThread(() -> {
             if ((stage != null) && stage.isShowing()) {
@@ -985,7 +998,10 @@ public class JFXPanel extends JComponent {
 
         super.removeNotify();
 
-        getToolkit().removeAWTEventListener(ungrabListener);
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            JFXPanel.this.getToolkit().removeAWTEventListener(ungrabListener);
+            return null;
+        });
 
         /* see CR 4867453 */
         getInputContext().removeNotify(this);
