@@ -37,6 +37,10 @@ import javafx.beans.value.ObservableValue;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * A {@code JavaBeanIntegerProperty} provides an adapter between a regular
  * Java Bean property of type {@code int} or {@code Integer} and a JavaFX
@@ -92,6 +96,9 @@ public final class JavaBeanIntegerProperty extends IntegerProperty implements Ja
     private ObservableValue<? extends Number> observable = null;
     private ExpressionHelper<Number> helper = null;
 
+    @SuppressWarnings("removal")
+    private final AccessControlContext acc = AccessController.getContext();
+
     JavaBeanIntegerProperty(PropertyDescriptor<Number> descriptor, Object bean) {
         this.descriptor = descriptor;
         this.listener = descriptor.new Listener(bean, this);
@@ -109,14 +116,16 @@ public final class JavaBeanIntegerProperty extends IntegerProperty implements Ja
     @SuppressWarnings("removal")
     @Override
     public int get() {
-        try {
-            return ((Number)MethodHelper.invoke(
-                descriptor.getGetter(), getBean(), (Object[])null)).intValue();
-        } catch (IllegalAccessException e) {
-            throw new UndeclaredThrowableException(e);
-        } catch (InvocationTargetException e) {
-            throw new UndeclaredThrowableException(e);
-        }
+        return AccessController.doPrivileged((PrivilegedAction<Integer>) () -> {
+            try {
+                return ((Number)MethodHelper.invoke(
+                    descriptor.getGetter(), getBean(), (Object[])null)).intValue();
+            } catch (IllegalAccessException e) {
+                throw new UndeclaredThrowableException(e);
+            } catch (InvocationTargetException e) {
+                throw new UndeclaredThrowableException(e);
+            }
+        }, acc);
     }
 
     /**
@@ -126,19 +135,23 @@ public final class JavaBeanIntegerProperty extends IntegerProperty implements Ja
      * property throws an {@code IllegalAccessException} or an
      * {@code InvocationTargetException}.
      */
+    @SuppressWarnings("removal")
     @Override
     public void set(final int value) {
         if (isBound()) {
             throw new RuntimeException("A bound value cannot be set.");
         }
-        try {
-            MethodHelper.invoke(descriptor.getSetter(), getBean(), new Object[] {value});
-            ExpressionHelper.fireValueChangedEvent(helper);
-        } catch (IllegalAccessException e) {
-            throw new UndeclaredThrowableException(e);
-        } catch (InvocationTargetException e) {
-            throw new UndeclaredThrowableException(e);
-        }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            try {
+                MethodHelper.invoke(descriptor.getSetter(), getBean(), new Object[] {value});
+                ExpressionHelper.fireValueChangedEvent(helper);
+            } catch (IllegalAccessException e) {
+                throw new UndeclaredThrowableException(e);
+            } catch (InvocationTargetException e) {
+                throw new UndeclaredThrowableException(e);
+            }
+            return null;
+        }, acc);
     }
 
     /**
