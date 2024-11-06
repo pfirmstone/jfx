@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -99,6 +101,7 @@ final class SocketStreamHandle {
         return ssh;
     }
 
+    @SuppressWarnings("removal")
     private void run() {
         if (webPage == null) {
             logger.finest("{0} is not associated with any web "
@@ -111,7 +114,13 @@ final class SocketStreamHandle {
             didClose();
             return;
         }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            doRun();
+            return null;
+        }, webPage.getAccessControlContext());
+    }
 
+    private void doRun() {
         Throwable error = null;
         String errorDescription = null;
         try {
@@ -200,7 +209,9 @@ final class SocketStreamHandle {
         boolean success = false;
         IOException lastException = null;
         boolean triedDirectConnection = false;
-        ProxySelector proxySelector = ProxySelector.getDefault();
+        @SuppressWarnings("removal")
+        ProxySelector proxySelector = AccessController.doPrivileged(
+                (PrivilegedAction<ProxySelector>) () -> ProxySelector.getDefault());
         if (proxySelector != null) {
             URI uri;
             try {

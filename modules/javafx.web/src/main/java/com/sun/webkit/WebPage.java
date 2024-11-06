@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -100,6 +103,10 @@ public final class WebPage {
     // List of created frames
     private final Set<Long> frames = new HashSet<>();
 
+    // The access control context associated with this object
+    @SuppressWarnings("removal")
+    private final AccessControlContext accessControlContext;
+
     // Maps load request identifiers to URLs
     private final Map<Integer, String> requestURLs =
             new HashMap<>();
@@ -127,42 +134,48 @@ public final class WebPage {
     private int updateContentCycleID;
 
     static {
-        NativeLibLoader.loadLibrary("jfxwebkit");
-        log.finer("jfxwebkit loaded");
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            NativeLibLoader.loadLibrary("jfxwebkit");
+            log.finer("jfxwebkit loaded");
 
-        if (CookieHandler.getDefault() == null) {
-            boolean setDefault = Boolean.valueOf(System.getProperty(
-                    "com.sun.webkit.setDefaultCookieHandler",
-                    "true"));
-            if (setDefault) {
-                CookieHandler.setDefault(new CookieManager());
+            if (CookieHandler.getDefault() == null) {
+                boolean setDefault = Boolean.valueOf(System.getProperty(
+                        "com.sun.webkit.setDefaultCookieHandler",
+                        "true"));
+                if (setDefault) {
+                    CookieHandler.setDefault(new CookieManager());
+                }
             }
-        }
 
-        final boolean useJIT = Boolean.valueOf(System.getProperty(
-                "com.sun.webkit.useJIT", "true"));
-        final boolean useDFGJIT = Boolean.valueOf(System.getProperty(
-                "com.sun.webkit.useDFGJIT", "false"));
+            final boolean useJIT = Boolean.valueOf(System.getProperty(
+                    "com.sun.webkit.useJIT", "true"));
+            final boolean useDFGJIT = Boolean.valueOf(System.getProperty(
+                    "com.sun.webkit.useDFGJIT", "false"));
 
-        // TODO: Enable CSS3D by default once it is stabilized.
-        boolean useCSS3D = Boolean.valueOf(System.getProperty(
-                "com.sun.webkit.useCSS3D", "false"));
-        useCSS3D = useCSS3D && Platform.isSupported(ConditionalFeature.SCENE3D);
+            // TODO: Enable CSS3D by default once it is stabilized.
+            boolean useCSS3D = Boolean.valueOf(System.getProperty(
+                    "com.sun.webkit.useCSS3D", "false"));
+            useCSS3D = useCSS3D && Platform.isSupported(ConditionalFeature.SCENE3D);
 
-        // Initialize WTF, WebCore and JavaScriptCore.
-        twkInitWebCore(useJIT, useDFGJIT, useCSS3D);
+            // Initialize WTF, WebCore and JavaScriptCore.
+            twkInitWebCore(useJIT, useDFGJIT, useCSS3D);
 
-        // Inform the native webkit code when either the JVM or the
-        // JavaFX runtime is being shutdown
-        final Runnable shutdownHook = () -> {
-            synchronized(WebPage.class) {
-                MainThread.twkSetShutdown(true);
-            }
-        };
+            // Inform the native webkit code when either the JVM or the
+            // JavaFX runtime is being shutdown
+            final Runnable shutdownHook = () -> {
+                synchronized(WebPage.class) {
+                    MainThread.twkSetShutdown(true);
+                }
+            };
 
-        // Register shutdown hook with the Java runtime and the Toolkit
-        Toolkit.getToolkit().addShutdownHook(shutdownHook);
-        Runtime.getRuntime().addShutdownHook(new Thread(shutdownHook));
+            // Register shutdown hook with the Java runtime and the Toolkit
+            Toolkit.getToolkit().addShutdownHook(shutdownHook);
+            Runtime.getRuntime().addShutdownHook(new Thread(shutdownHook));
+
+            return null;
+        });
+
     }
 
     private static boolean firstWebPageCreated = false;
@@ -197,6 +210,10 @@ public final class WebPage {
             this.scrollbarTheme = null;
         }
 
+        @SuppressWarnings("removal")
+        AccessControlContext tmpAcc = AccessController.getContext();
+        accessControlContext = tmpAcc;
+
         hostWindow = new WCFrameView(this);
         pPage = twkCreatePage(editable);
 
@@ -222,6 +239,16 @@ public final class WebPage {
     // Called from the native code
     private WCWidget getHostWindow() {
         return hostWindow;
+    }
+
+    /**
+     * Returns the access control context associated with this object.
+     * May be called on any thread.
+     * @return the access control context associated with this object
+     */
+    @SuppressWarnings("removal")
+    public AccessControlContext getAccessControlContext() {
+        return accessControlContext;
     }
 
     static boolean lockPage() {
