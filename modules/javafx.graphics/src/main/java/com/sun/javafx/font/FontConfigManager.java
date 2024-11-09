@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.javafx.font;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,12 +44,18 @@ public class FontConfigManager {
     static boolean useEmbeddedFontSupport = false;
 
     static {
-        String dbg = System.getProperty("prism.debugfonts", "");
-        debugFonts = "true".equals(dbg);
-        String ufc = System.getProperty("prism.useFontConfig", "true");
-        useFontConfig = "true".equals(ufc);
-        String emb = System.getProperty("prism.embeddedfonts", "");
-        useEmbeddedFontSupport = "true".equals(emb);
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(
+                (PrivilegedAction<Void>) () -> {
+                    String dbg = System.getProperty("prism.debugfonts", "");
+                    debugFonts = "true".equals(dbg);
+                    String ufc = System.getProperty("prism.useFontConfig", "true");
+                    useFontConfig = "true".equals(ufc);
+                    String emb = System.getProperty("prism.embeddedfonts", "");
+                    useEmbeddedFontSupport = "true".equals(emb);
+                    return null;
+                }
+        );
     }
 
     /* These next three classes are just data structures.
@@ -340,7 +348,13 @@ public class FontConfigManager {
         private static boolean fontDirFromJRE = false;
 
         static {
-            initEmbeddedFonts();
+            @SuppressWarnings("removal")
+            var dummy = AccessController.doPrivileged(
+                    (PrivilegedAction<Void>) () -> {
+                        initEmbeddedFonts();
+                    return null;
+                    }
+            );
         }
 
         private static void initEmbeddedFonts() {
@@ -385,8 +399,11 @@ public class FontConfigManager {
         }
 
 
+        @SuppressWarnings("removal")
         private static boolean exists(final File f) {
-            return f.exists();
+            return AccessController.doPrivileged(
+                    (PrivilegedAction<Boolean>) () -> f.exists()
+            );
         }
 
         // this mapping is used in the embedded world when
@@ -527,18 +544,24 @@ public class FontConfigManager {
              Locale locale)
         {
             final Properties props = new Properties();
-            try {
-                String lFile = fontDir+"/allfonts.properties";
-                FileInputStream fis = new FileInputStream(lFile);
-                props.load(fis);
-                fis.close();
-            } catch (IOException ioe) {
-                props.clear();
-                if (debugFonts) {
-                    System.err.println(ioe);
-                    System.err.println("Fall back to opening the files");
-                }
-            }
+            @SuppressWarnings("removal")
+            var dummy = AccessController.doPrivileged(
+                    (PrivilegedAction<Void>) () -> {
+                        try {
+                            String lFile = fontDir+"/allfonts.properties";
+                            FileInputStream fis = new FileInputStream(lFile);
+                            props.load(fis);
+                            fis.close();
+                        } catch (IOException ioe) {
+                            props.clear();
+                            if (debugFonts) {
+                                System.err.println(ioe);
+                                System.err.println("Fall back to opening the files");
+                            }
+                        }
+                        return null;
+                    }
+            );
 
             if (!props.isEmpty()) {
                 int maxFont = Integer.MAX_VALUE;

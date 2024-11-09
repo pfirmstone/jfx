@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package com.sun.marlin;
 
+import java.security.AccessController;
 import static com.sun.marlin.MarlinUtils.logInfo;
+import java.security.PrivilegedAction;
 
 public final class MarlinProperties {
 
@@ -266,20 +268,30 @@ public final class MarlinProperties {
     }
 
     // system property utilities
+    @SuppressWarnings("removal")
     static String getString(final String key, final String def) {
-        String value = System.getProperty(key);
-        return (value == null) ? def : value;
+        return AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> {
+                String value = System.getProperty(key);
+                return (value == null) ? def : value;
+            });
     }
 
+    @SuppressWarnings("removal")
     static boolean getBoolean(final String key, final String def) {
-        String value = System.getProperty(key);
-        return Boolean.valueOf((value == null) ? def : value);
+        return Boolean.valueOf(AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> {
+                String value = System.getProperty(key);
+                return (value == null) ? def : value;
+            }));
     }
 
     static int getInteger(final String key, final int def,
                                  final int min, final int max)
     {
-        final String property = System.getProperty(key);
+        @SuppressWarnings("removal")
+        final String property = AccessController.doPrivileged(
+                    (PrivilegedAction<String>) () -> System.getProperty(key));
 
         int value = def;
         if (property != null) {
@@ -308,7 +320,9 @@ public final class MarlinProperties {
                                    final double min, final double max)
     {
         double value = def;
-        final String property = System.getProperty(key);
+        @SuppressWarnings("removal")
+        final String property = AccessController.doPrivileged(
+                    (PrivilegedAction<String>) () -> System.getProperty(key));
 
         if (property != null) {
             try {

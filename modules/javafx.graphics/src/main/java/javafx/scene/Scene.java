@@ -90,6 +90,7 @@ import com.sun.javafx.logging.PlatformLogger.Level;
 import java.io.File;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
@@ -1408,6 +1409,7 @@ public class Scene implements EventTarget {
     private static List<Runnable> snapshotRunnableListB;
     private static List<Runnable> snapshotRunnableList;
 
+    @SuppressWarnings("removal")
     static void addSnapshotRunnable(final Runnable runnable) {
         Toolkit.getToolkit().checkFxUserThread();
 
@@ -1441,7 +1443,13 @@ public class Scene implements EventTarget {
             Toolkit.getToolkit().addPostSceneTkPulseListener(snapshotPulseListener);
         }
 
-        snapshotRunnableList.add(runnable);
+        final AccessControlContext acc = AccessController.getContext();
+        snapshotRunnableList.add(() -> {
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                runnable.run();
+                return null;
+            }, acc);
+        });
         Toolkit.getToolkit().requestNextPulse();
     }
 
@@ -6236,8 +6244,10 @@ public class Scene implements EventTarget {
      *                                                                         *
      **************************************************************************/
 
+    @SuppressWarnings("removal")
     private static final NodeOrientation defaultNodeOrientation =
-        Boolean.getBoolean("javafx.scene.nodeOrientation.RTL") ? NodeOrientation.RIGHT_TO_LEFT : NodeOrientation.INHERIT;
+        AccessController.doPrivileged(
+                (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("javafx.scene.nodeOrientation.RTL")) ? NodeOrientation.RIGHT_TO_LEFT : NodeOrientation.INHERIT;
 
     /**
      * Node orientation describes the flow of visual data within a node.

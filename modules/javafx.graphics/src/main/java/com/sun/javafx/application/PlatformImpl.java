@@ -39,6 +39,9 @@ import com.sun.javafx.util.ModuleHelper;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -102,9 +105,15 @@ public class PlatformImpl {
     private static BooleanProperty accessibilityActive = new SimpleBooleanProperty();
     private static CountDownLatch allNestedLoopsExitedLatch = new CountDownLatch(1);
 
-    private static final boolean verbose = Boolean.getBoolean("javafx.verbose");
+    @SuppressWarnings("removal")
+    private static final boolean verbose
+            = AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
+                Boolean.getBoolean("javafx.verbose"));
 
-    private static final boolean DEBUG = Boolean.getBoolean("com.sun.javafx.application.debug");
+    @SuppressWarnings("removal")
+    private static final boolean DEBUG
+            = AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
+                    -> Boolean.getBoolean("com.sun.javafx.application.debug"));
 
     // Internal permission used by FXCanvas (SWT interop)
     private static final FXPermission FXCANVAS_PERMISSION =
@@ -209,48 +218,52 @@ public class PlatformImpl {
             Logging.getJavaFXLogger().warning(warningStr);
         }
 
-        applicationType = System.getProperty("com.sun.javafx.application.type");
-        if (applicationType == null) applicationType = "";
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            applicationType = System.getProperty("com.sun.javafx.application.type");
+            if (applicationType == null) applicationType = "";
 
-        contextual2DNavigation = Boolean.getBoolean(
-                "com.sun.javafx.isContextual2DNavigation");
-        String s = System.getProperty("com.sun.javafx.twoLevelFocus");
-        if (s != null) {
-            hasTwoLevelFocus = Boolean.valueOf(s);
-        }
-        s = System.getProperty("com.sun.javafx.virtualKeyboard");
-        if (s != null) {
-            if (s.equalsIgnoreCase("none")) {
-                hasVirtualKeyboard = false;
-            } else if (s.equalsIgnoreCase("javafx")) {
-                hasVirtualKeyboard = true;
-            } else if (s.equalsIgnoreCase("native")) {
-                hasVirtualKeyboard = true;
+            contextual2DNavigation = Boolean.getBoolean(
+                    "com.sun.javafx.isContextual2DNavigation");
+            String s = System.getProperty("com.sun.javafx.twoLevelFocus");
+            if (s != null) {
+                hasTwoLevelFocus = Boolean.valueOf(s);
             }
-        }
-        s = System.getProperty("com.sun.javafx.touch");
-        if (s != null) {
-            hasTouch = Boolean.valueOf(s);
-        }
-        s = System.getProperty("com.sun.javafx.multiTouch");
-        if (s != null) {
-            hasMultiTouch = Boolean.valueOf(s);
-        }
-        s = System.getProperty("com.sun.javafx.pointer");
-        if (s != null) {
-            hasPointer = Boolean.valueOf(s);
-        }
-        s = System.getProperty("javafx.embed.singleThread");
-        if (s != null) {
-            isThreadMerged = Boolean.valueOf(s);
-            if (isThreadMerged && !isSupported(ConditionalFeature.SWING)) {
-                isThreadMerged = false;
-                if (verbose) {
-                    System.err.println(
-                    "WARNING: javafx.embed.singleThread ignored (javafx.swing module not found)");
+            s = System.getProperty("com.sun.javafx.virtualKeyboard");
+            if (s != null) {
+                if (s.equalsIgnoreCase("none")) {
+                    hasVirtualKeyboard = false;
+                } else if (s.equalsIgnoreCase("javafx")) {
+                    hasVirtualKeyboard = true;
+                } else if (s.equalsIgnoreCase("native")) {
+                    hasVirtualKeyboard = true;
                 }
             }
-        }
+            s = System.getProperty("com.sun.javafx.touch");
+            if (s != null) {
+                hasTouch = Boolean.valueOf(s);
+            }
+            s = System.getProperty("com.sun.javafx.multiTouch");
+            if (s != null) {
+                hasMultiTouch = Boolean.valueOf(s);
+            }
+            s = System.getProperty("com.sun.javafx.pointer");
+            if (s != null) {
+                hasPointer = Boolean.valueOf(s);
+            }
+            s = System.getProperty("javafx.embed.singleThread");
+            if (s != null) {
+                isThreadMerged = Boolean.valueOf(s);
+                if (isThreadMerged && !isSupported(ConditionalFeature.SWING)) {
+                    isThreadMerged = false;
+                    if (verbose) {
+                        System.err.println(
+                        "WARNING: javafx.embed.singleThread ignored (javafx.swing module not found)");
+                    }
+                }
+            }
+            return null;
+        });
 
         if (DEBUG) {
             System.err.println("PlatformImpl::startup : applicationType = "
@@ -261,7 +274,11 @@ public class PlatformImpl {
         }
 
         if (!taskbarApplication) {
-            System.setProperty("glass.taskbarApplication", "false");
+            @SuppressWarnings("removal")
+            var dummy2 = AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                System.setProperty("glass.taskbarApplication", "false");
+                return null;
+            });
         }
 
         // Create Toolkit listener and register it with the Toolkit.
@@ -298,7 +315,9 @@ public class PlatformImpl {
         // Read the javafx.embed.eventProc system property and store
         // it in an entry in the glass Application device details map
         final String eventProcProperty = "javafx.embed.eventProc";
-        final long eventProc = Long.getLong(eventProcProperty, 0);
+        @SuppressWarnings("removal")
+        final long eventProc = AccessController.doPrivileged((PrivilegedAction<Long>) () ->
+                Long.getLong(eventProcProperty, 0));
         if (eventProc != 0L) {
             // Set the value for the javafx.embed.eventProc
             // key in the glass Application map
@@ -357,7 +376,9 @@ public class PlatformImpl {
                 !f.getClassName().startsWith("javafx.application.")
                         && !f.getClassName().startsWith("com.sun.javafx.application.");
 
-        final StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+        @SuppressWarnings("removal")
+        final StackWalker walker = AccessController.doPrivileged((PrivilegedAction<StackWalker>) () ->
+                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE));
         Optional<StackWalker.StackFrame> frame = walker.walk(
                 s -> s.filter(classFilter).findFirst());
 
@@ -435,10 +456,16 @@ public class PlatformImpl {
                 return;
             }
 
+            @SuppressWarnings("removal")
+            final AccessControlContext acc = AccessController.getContext();
             // Don't catch exceptions, they are handled by Toolkit.defer()
             Toolkit.getToolkit().defer(() -> {
                 try {
-                    r.run();
+                    @SuppressWarnings("removal")
+                    var dummy = AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                        r.run();
+                        return null;
+                    }, acc);
                 } finally {
                     pendingRunnables.decrementAndGet();
                     checkIdle();
@@ -729,7 +756,9 @@ public class PlatformImpl {
     private static void _setAccessibilityTheme(String platformTheme) {
 
         // check to see if there is an override to enable a high-contrast theme
-        final String userTheme = System.getProperty("com.sun.javafx.highContrastTheme");
+        @SuppressWarnings("removal")
+        final String userTheme = AccessController.doPrivileged(
+                (PrivilegedAction<String>) () -> System.getProperty("com.sun.javafx.highContrastTheme"));
 
         if (isCaspian()) {
             if (platformTheme != null || userTheme != null) {
@@ -775,7 +804,9 @@ public class PlatformImpl {
     private static void _setPlatformUserAgentStylesheet(String stylesheetUrl) {
         isModena = isCaspian = false;
         // check for command line override
-        final String overrideStylesheetUrl = System.getProperty("javafx.userAgentStylesheetUrl");
+        @SuppressWarnings("removal")
+        final String overrideStylesheetUrl = AccessController.doPrivileged(
+                (PrivilegedAction<String>) () -> System.getProperty("javafx.userAgentStylesheetUrl"));
 
         if (overrideStylesheetUrl != null) {
             stylesheetUrl = overrideStylesheetUrl;
@@ -855,16 +886,28 @@ public class PlatformImpl {
             uaStylesheets.add(accessibilityTheme);
         }
 
-        StyleManager.getInstance().setUserAgentStylesheets(uaStylesheets);
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged((PrivilegedAction) () -> {
+            StyleManager.getInstance().setUserAgentStylesheets(uaStylesheets);
+            return null;
+        });
+
     }
 
+    @SuppressWarnings("removal")
     public static void addNoTransparencyStylesheetToScene(final Scene scene) {
         if (PlatformImpl.isCaspian()) {
-            StyleManager.getInstance().addUserAgentStylesheet(scene,
-                    "com/sun/javafx/scene/control/skin/caspian/caspian-no-transparency.css");
+            AccessController.doPrivileged((PrivilegedAction) () -> {
+                StyleManager.getInstance().addUserAgentStylesheet(scene,
+                        "com/sun/javafx/scene/control/skin/caspian/caspian-no-transparency.css");
+                return null;
+            });
         } else if (PlatformImpl.isModena()) {
-            StyleManager.getInstance().addUserAgentStylesheet(scene,
-                    "com/sun/javafx/scene/control/skin/modena/modena-no-transparency.css");
+            AccessController.doPrivileged((PrivilegedAction) () -> {
+                StyleManager.getInstance().addUserAgentStylesheet(scene,
+                        "com/sun/javafx/scene/control/skin/modena/modena-no-transparency.css");
+                return null;
+            });
         }
     }
 
@@ -886,10 +929,15 @@ public class PlatformImpl {
                     isMediaSupported = checkForClass(
                             "javafx.scene.media.MediaView");
                     if (isMediaSupported && PlatformUtil.isEmbedded()) {
-                        String s = System.getProperty(
-                                "com.sun.javafx.experimental.embedded.media",
-                                "false");
-                        isMediaSupported = Boolean.valueOf(s);
+                        @SuppressWarnings("removal")
+                        var dummy = AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                            String s = System.getProperty(
+                                    "com.sun.javafx.experimental.embedded.media",
+                                    "false");
+                            isMediaSupported = Boolean.valueOf(s);
+                            return null;
+
+                        });
                     }
                 }
                 return isMediaSupported;
@@ -897,10 +945,15 @@ public class PlatformImpl {
                 if (isWebSupported == null) {
                     isWebSupported = checkForClass("javafx.scene.web.WebView");
                     if (isWebSupported && PlatformUtil.isEmbedded()) {
-                        String s = System.getProperty(
-                                "com.sun.javafx.experimental.embedded.web",
-                                "false");
-                        isWebSupported = Boolean.valueOf(s);
+                        @SuppressWarnings("removal")
+                        var dummy = AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                            String s = System.getProperty(
+                                    "com.sun.javafx.experimental.embedded.web",
+                                    "false");
+                            isWebSupported = Boolean.valueOf(s);
+                            return null;
+
+                        });
                     }
                 }
                 return isWebSupported;

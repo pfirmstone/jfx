@@ -25,6 +25,9 @@
 
 package javafx.application;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * Class that is extended to define an optional preloader for a
  * JavaFX Application.
@@ -103,7 +106,14 @@ package javafx.application;
  */
 public abstract class Preloader extends Application {
 
-    private static final String lineSeparator = System.lineSeparator();
+    // Too bad this isn't already available in a Java core class
+    private static final String lineSeparator;
+
+    static {
+        @SuppressWarnings("removal")
+        String prop = AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty("line.separator"));
+        lineSeparator = prop != null ? prop : "\n";
+    }
 
     /**
      * Constructor for subclasses to call.

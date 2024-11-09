@@ -33,6 +33,8 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
@@ -450,7 +452,11 @@ class D3DResourceFactory extends BaseShaderFactory {
             throw new IllegalArgumentException("Shader name must be non-null");
         }
         try {
-            InputStream stream = D3DResourceFactory.class.getResourceAsStream("hlsl/" + name + ".obj");
+            @SuppressWarnings("removal")
+            InputStream stream = AccessController.doPrivileged(
+                    (PrivilegedAction<InputStream>) () -> D3DResourceFactory.class.
+                           getResourceAsStream("hlsl/" + name + ".obj")
+            );
             Class klass = Class.forName("com.sun.prism.shader." + name + "_Loader");
             Method m = klass.getMethod("loadShader",
                 new Class[] { ShaderFactory.class, String.class, InputStream.class });
