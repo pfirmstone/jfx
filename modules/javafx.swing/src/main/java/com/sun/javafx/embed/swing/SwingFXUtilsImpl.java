@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.javafx.embed.swing;
 
 import java.awt.EventQueue;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import com.sun.javafx.embed.swing.newimpl.SwingFXUtilsImplInteropN;
 
 public class SwingFXUtilsImpl {
@@ -36,8 +38,10 @@ public class SwingFXUtilsImpl {
         swFXUtilIOP = new SwingFXUtilsImplInteropN();
     }
 
+    @SuppressWarnings("removal")
     private static EventQueue getEventQueue() {
-        return java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue();
+        return AccessController.doPrivileged(
+                (PrivilegedAction<EventQueue>) () -> java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue());
     }
 
     //Called with reflection from PlatformImpl to avoid dependency
