@@ -72,6 +72,7 @@ public class ModuleLauncherTest {
                 test.util.Util.createApplicationLaunchCommand(
                         moduleAppName,
                         null,
+                        null,
                         new String[] { mpArg }
                         );
 
