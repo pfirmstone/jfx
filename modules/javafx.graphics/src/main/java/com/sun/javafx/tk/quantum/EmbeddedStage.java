@@ -26,6 +26,8 @@
 package com.sun.javafx.tk.quantum;
 
 import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 
 import com.sun.javafx.embed.AbstractEvents;
@@ -218,8 +220,13 @@ final class EmbeddedStage extends GlassStage implements EmbeddedStageInterface {
         host.ungrabFocus();
     }
 
+    @SuppressWarnings("removal")
     private void notifyStageListener(final Runnable r) {
-        r.run();
+        AccessControlContext acc = getAccessControlContext();
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            r.run();
+            return null;
+        }, acc);
     }
     private void notifyStageListenerLater(final Runnable r) {
         Platform.runLater(() -> notifyStageListener(r));

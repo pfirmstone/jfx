@@ -30,6 +30,7 @@ import javafx.scene.input.InputMethodRequests;
 import javafx.stage.StageStyle;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicBoolean;
 import com.sun.glass.ui.Clipboard;
 import com.sun.glass.ui.ClipboardAssistance;
@@ -246,17 +247,21 @@ abstract class GlassScene implements TKScene {
     @Override
     public TKClipboard createDragboard(boolean isDragSource) {
         ClipboardAssistance assistant = new ClipboardAssistance(Clipboard.DND) {
+            @SuppressWarnings("removal")
             @Override
             public void actionPerformed(final int performedAction) {
                 super.actionPerformed(performedAction);
-                try {
-                    if (dragSourceListener != null) {
-                        dragSourceListener.dragDropEnd(0, 0, 0, 0,
-                                QuantumToolkit.clipboardActionToTransferMode(performedAction));
+                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                    try {
+                        if (dragSourceListener != null) {
+                            dragSourceListener.dragDropEnd(0, 0, 0, 0,
+                                    QuantumToolkit.clipboardActionToTransferMode(performedAction));
+                        }
+                    } finally {
+                        QuantumClipboard.releaseCurrentDragboard();
                     }
-                } finally {
-                    QuantumClipboard.releaseCurrentDragboard();
-                }
+                    return null;
+                }, getAccessControlContext());
             }
         };
         return QuantumClipboard.getDragboardInstance(assistant, isDragSource);
