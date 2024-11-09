@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,12 @@
 package com.sun.webkit.network;
 
 import java.net.MalformedURLException;
+import java.net.NetPermission;
 import java.net.URL;
 import java.net.URLStreamHandler;
+import java.security.AccessController;
+import java.security.Permission;
+import java.security.PrivilegedAction;
 import java.util.Map;
 
 /**
@@ -42,6 +46,9 @@ public final class URLs {
     private static final Map<String,URLStreamHandler> HANDLER_MAP = Map.of(
         "about", new com.sun.webkit.network.about.Handler(),
         "data", new com.sun.webkit.network.data.Handler());
+
+    private static final Permission streamHandlerPermission =
+        new NetPermission("specifyStreamHandler");
 
     /**
      * The private default constructor. Ensures non-instantiability.
@@ -89,7 +96,25 @@ public final class URLs {
 
             if (handler == null) throw ex;
 
-            return new URL(context, spec, handler);
+            try {
+                // We should be able to specify one of our stream handlers for the URL
+                // when running with a security manager
+                @SuppressWarnings("removal")
+                URL result = AccessController.doPrivileged((PrivilegedAction<URL>) () -> {
+                    try {
+                        return new URL(context, spec, handler);
+                    } catch (MalformedURLException muex) {
+                        throw new RuntimeException(muex);
+                    }
+                }, null, streamHandlerPermission);
+                return result;
+
+            } catch (RuntimeException re) {
+                if (re.getCause() instanceof MalformedURLException) {
+                    throw (MalformedURLException)re.getCause();
+                }
+                throw re;
+            }
         }
     }
 }
