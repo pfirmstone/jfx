@@ -33,6 +33,9 @@ import com.sun.glass.ui.Application;
 import com.sun.glass.ui.GlassRobot;
 import com.sun.glass.ui.Screen;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 final class GtkRobot extends GlassRobot {
 
     private static final String screenshotMethod;
@@ -40,12 +43,19 @@ final class GtkRobot extends GlassRobot {
     private static final String METHOD_SCREENCAST = "dbusScreencast";
 
     static {
-        String waylandDisplay = System.getenv("WAYLAND_DISPLAY");
-        boolean isOnWayland = waylandDisplay != null && !waylandDisplay.isBlank();
+        @SuppressWarnings("removal")
+        boolean isOnWayland = AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
+            String waylandDisplay = System.getenv("WAYLAND_DISPLAY");
+            return waylandDisplay != null && !waylandDisplay.isBlank();
+        });
 
-        String method =
-            System.getProperty("javafx.robot.screenshotMethod",
-                isOnWayland ? METHOD_SCREENCAST : METHOD_GTK);
+        @SuppressWarnings("removal")
+        String method = AccessController
+                .doPrivileged((PrivilegedAction<String>) () ->
+                        System.getProperty(
+                                "javafx.robot.screenshotMethod",
+                                isOnWayland ? METHOD_SCREENCAST : METHOD_GTK
+                        ));
         screenshotMethod = method;
     }
 

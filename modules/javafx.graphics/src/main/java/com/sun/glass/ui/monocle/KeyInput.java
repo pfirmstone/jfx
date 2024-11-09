@@ -27,6 +27,9 @@ package com.sun.glass.ui.monocle;
 
 import com.sun.glass.events.KeyEvent;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * Processes key input events based on changes to key state. Not
  * thread-safe.
@@ -82,9 +85,13 @@ class KeyInput {
                 } else if (key == KeyEvent.VK_NUM_LOCK) {
                     numLock = !numLock;
                 } else if (key == KeyEvent.VK_C && newState.isControlPressed()) {
-                    if ("1".equals(System.getenv("JAVAFX_DEBUG"))) {
-                        System.exit(0);
-                    }
+                    @SuppressWarnings("removal")
+                    var dummy = AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                        if ("1".equals(System.getenv("JAVAFX_DEBUG"))) {
+                            System.exit(0);
+                        }
+                        return null;
+                    });
                 }
                 dispatchKeyEvent(newState, KeyEvent.PRESS, key);
             }

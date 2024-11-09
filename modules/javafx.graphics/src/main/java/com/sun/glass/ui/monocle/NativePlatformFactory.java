@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 
 package com.sun.glass.ui.monocle;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /** Abstract factory class to instantiate a NativePlatform */
 public abstract class NativePlatformFactory {
@@ -78,9 +81,10 @@ public abstract class NativePlatformFactory {
      */
     public static synchronized NativePlatform getNativePlatform() {
         if (platform == null) {
+            @SuppressWarnings("removal")
             String platformFactoryProperty =
-                    System.getProperty("monocle.platform",
-                                        "MX6,OMAP,Dispman,Android,X11,Linux,Headless");
+                    AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty("monocle.platform",
+                                              "MX6,OMAP,Dispman,Android,X11,Linux,Headless"));
             String[] platformFactories = platformFactoryProperty.split(",");
             for (int i = 0; i < platformFactories.length; i++) {
                 String factoryName = platformFactories[i].trim();

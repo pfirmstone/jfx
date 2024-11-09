@@ -28,12 +28,13 @@ package com.sun.glass.ui.gtk.screencast;
 import com.sun.glass.ui.Screen;
 
 import com.sun.javafx.geom.Rectangle;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.IntStream;
-import java.util.function.Supplier;
 
 /**
  * Helper class for grabbing pixels from the screen using the
@@ -62,12 +63,13 @@ public class ScreencastHelper {
     }
 
     static {
+        @SuppressWarnings("removal")
         boolean isDebugEnabled =
-                ((Supplier<Boolean>) () -> {
+                AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
                     final String str =
                             System.getProperty("javafx.robot.screenshotDebug", "false");
                     return "true".equalsIgnoreCase(str);
-                }).get();
+                });
         SCREENCAST_DEBUG = isDebugEnabled;
 
         IS_NATIVE_LOADED = loadPipewire(SCREENCAST_DEBUG);

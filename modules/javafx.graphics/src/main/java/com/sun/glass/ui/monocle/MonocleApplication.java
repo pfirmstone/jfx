@@ -40,6 +40,8 @@ import javafx.collections.SetChangeListener;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 
 public final class MonocleApplication extends Application {
@@ -109,7 +111,10 @@ public final class MonocleApplication extends Application {
     @Override
     protected void runLoop(Runnable launchable) {
         runnableProcessor.invokeLater(launchable);
-        long stackSize = Long.getLong("monocle.stackSize", 0);
+        @SuppressWarnings("removal")
+        long stackSize = AccessController.doPrivileged(
+                (PrivilegedAction<Long>)
+                        () -> Long.getLong("monocle.stackSize", 0));
         Thread t = new Thread(
                 new ThreadGroup("Event"),
                 runnableProcessor,
