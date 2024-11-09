@@ -93,10 +93,8 @@ public abstract class Utilities {
     private static Object fwkInvokeWithContext(final Method method,
                                                final Object instance,
                                                final Object[] args,
-                                               Object accObj)
+                                               AccessControlContext acc)
             throws Throwable {
-
-        AccessControlContext acc = (AccessControlContext) accObj;
 
         final Class<?> clazz = method.getDeclaringClass();
         if (clazz.equals(java.lang.Class.class)) {

@@ -28,6 +28,7 @@ package com.sun.webkit.dom;
 import com.sun.webkit.Disposer;
 import com.sun.webkit.DisposerRecord;
 import com.sun.webkit.Invoker;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.concurrent.atomic.AtomicInteger;
 import netscape.javascript.JSException;
@@ -92,7 +93,7 @@ class JSObject extends netscape.javascript.JSObject {
     }
     private static native void setMemberImpl(long peer, int peer_type,
                                              String name, Object value,
-                                             Object acc);
+                                             @SuppressWarnings("removal") AccessControlContext acc);
 
     @Override
     public void removeMember(String name) throws JSException {
@@ -119,7 +120,7 @@ class JSObject extends netscape.javascript.JSObject {
     }
     private static native void setSlotImpl(long peer, int peer_type,
                                            int index, Object value,
-                                           Object acc);
+                                           @SuppressWarnings("removal") AccessControlContext acc);
 
     @SuppressWarnings("removal")
     @Override
@@ -130,7 +131,7 @@ class JSObject extends netscape.javascript.JSObject {
     }
     private static native Object callImpl(long peer, int peer_type,
                                           String methodName, Object[] args,
-                                          Object acc);
+                                          @SuppressWarnings("removal") AccessControlContext acc);
 
     @Override
     public String toString() {
