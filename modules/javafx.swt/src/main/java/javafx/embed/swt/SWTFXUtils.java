@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package javafx.embed.swt;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.ImageData;
@@ -189,21 +191,19 @@ public class SWTFXUtils {
         return msbFirst;
     }
 
+    @SuppressWarnings("removal")
     private static int readValue(final String name) throws Exception {
         final Class<?> clazz = ImageData.class;
-        Field field = clazz.getDeclaredField(name);
-        field.setAccessible(true);
-        return field.getInt(clazz);
-    }
-
-    private static Method getMethod(Class<?> clazz, String name, Class<?> ... argClasses) throws Exception {
-        Method method = clazz.getDeclaredMethod(name, argClasses);
-        method.setAccessible(true);
-        return method;
+        return AccessController.doPrivileged(
+                (PrivilegedExceptionAction<Integer>) () -> {
+                    Field field = clazz.getDeclaredField(name);
+                    field.setAccessible(true);
+                    return field.getInt(clazz);
+                });
     }
 
     private static Method blitDirect;
-
+    @SuppressWarnings("removal")
     private static void blit(int op,
             byte[] srcData, int srcDepth, int srcStride, int srcOrder,
             int srcX, int srcY, int srcWidth, int srcHeight,
@@ -225,7 +225,13 @@ public class SWTFXUtils {
                     BA, I, I, I,
                     I, I, I, I,
                     I, I, I, B, B};
-            blitDirect = getMethod(clazz, "blit", argClasses);
+            blitDirect = AccessController.doPrivileged(
+                    (PrivilegedExceptionAction<Method>) () -> {
+                        Method method = clazz.
+                            getDeclaredMethod("blit", argClasses);
+                        method.setAccessible(true);
+                        return method;
+                    });
         }
         if (blitDirect != null) {
             blitDirect.invoke(clazz, op,
@@ -241,7 +247,7 @@ public class SWTFXUtils {
     }
 
     private static Method blitPalette;
-
+    @SuppressWarnings("removal")
     private static void blit(int op,
         byte[] srcData, int srcDepth, int srcStride, int srcOrder,
         int srcX, int srcY, int srcWidth, int srcHeight,
@@ -263,7 +269,13 @@ public class SWTFXUtils {
                     BA, I, I, I,
                     I, I, I, I,
                     I, I, I, B, B};
-            blitPalette = getMethod(clazz, "blit", argClasses);
+            blitPalette = AccessController.doPrivileged(
+                    (PrivilegedExceptionAction<Method>) () -> {
+                        Method method = clazz.
+                            getDeclaredMethod("blit", argClasses);
+                        method.setAccessible(true);
+                        return method;
+                    });
         }
         if (blitPalette != null) {
             blitPalette.invoke(clazz, op,
@@ -279,11 +291,16 @@ public class SWTFXUtils {
     }
 
     private static Method getByteOrderMethod;
-
+    @SuppressWarnings("removal")
     private static int getByteOrder(ImageData image) throws Exception {
         final Class<?> clazz = ImageData.class;
         if (getByteOrderMethod != null) {
-            getByteOrderMethod = getMethod(clazz, "getByteOrder");
+            getByteOrderMethod = AccessController.doPrivileged(
+                    (PrivilegedExceptionAction<Method>) () -> {
+                        Method method = clazz.getDeclaredMethod("getByteOrder");
+                        method.setAccessible(true);
+                        return method;
+                    });
         }
         if (getByteOrderMethod != null) {
             return (Integer)getByteOrderMethod.invoke(image);
