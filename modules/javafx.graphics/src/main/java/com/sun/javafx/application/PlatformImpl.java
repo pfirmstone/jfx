@@ -27,7 +27,6 @@ package com.sun.javafx.application;
 
 import static com.sun.javafx.FXPermissions.CREATE_TRANSPARENT_WINDOW_PERMISSION;
 import com.sun.javafx.PlatformUtil;
-import com.sun.javafx.SecurityUtil;
 import com.sun.javafx.application.preferences.PlatformPreferences;
 import com.sun.javafx.application.preferences.PreferenceMapping;
 import com.sun.javafx.css.StyleManager;
@@ -61,8 +60,12 @@ import javafx.scene.Scene;
 public class PlatformImpl {
 
     static {
-        // Check for security manager (throws exception if enabled)
-        SecurityUtil.checkSecurityManager();
+        @SuppressWarnings("removal")
+        var sm = System.getSecurityManager();
+        if (sm != null) {
+            throw new UnsupportedOperationException("JavaFX does not support running with the Security Manager");
+        }
+
     }
 
     private static AtomicBoolean initialized = new AtomicBoolean(false);

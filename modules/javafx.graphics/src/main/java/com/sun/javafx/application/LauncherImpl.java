@@ -26,7 +26,6 @@
 package com.sun.javafx.application;
 
 import com.sun.javafx.PlatformUtil;
-import com.sun.javafx.SecurityUtil;
 import javafx.application.Application;
 import javafx.application.Preloader;
 import javafx.application.Preloader.ErrorNotification;
@@ -58,8 +57,12 @@ import com.sun.javafx.stage.StageHelper;
 public class LauncherImpl {
 
     static {
-        // Check for security manager (throws exception if enabled)
-        SecurityUtil.checkSecurityManager();
+        @SuppressWarnings("removal")
+        var sm = System.getSecurityManager();
+        if (sm != null) {
+            throw new UnsupportedOperationException("JavaFX does not support running with the Security Manager");
+        }
+
     }
 
     /**

@@ -25,7 +25,6 @@
 
 package com.sun.javafx.reflect;
 
-import com.sun.javafx.SecurityUtil;
 import java.security.AllPermission;
 import java.security.AccessController;
 import java.security.PermissionCollection;
@@ -77,12 +76,6 @@ class Trampoline {
  * Create a trampoline class.
  */
 public final class MethodUtil extends SecureClassLoader {
-
-    static {
-        // Check for security manager (throws exception if enabled)
-        SecurityUtil.checkSecurityManager();
-    }
-
     private static final String MISC_PKG = "com.sun.javafx.reflect.";
     private static final String TRAMPOLINE = MISC_PKG + "Trampoline";
     private static final Method bounce = getTrampoline();

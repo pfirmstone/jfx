@@ -26,15 +26,9 @@
 
 package com.sun.javafx.reflect;
 
-import com.sun.javafx.SecurityUtil;
 import java.lang.reflect.Proxy;
 
 public final class ReflectUtil {
-
-    static {
-        // Check for security manager (throws exception if enabled)
-        SecurityUtil.checkSecurityManager();
-    }
 
     private ReflectUtil() {
     }
