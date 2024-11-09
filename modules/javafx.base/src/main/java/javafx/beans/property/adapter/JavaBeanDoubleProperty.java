@@ -37,6 +37,10 @@ import javafx.beans.value.ObservableValue;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * A {@code JavaBeanDoubleProperty} provides an adapter between a regular
  * Java Bean property of type {@code double} or {@code Double} and a JavaFX
@@ -92,6 +96,9 @@ public final class JavaBeanDoubleProperty extends DoubleProperty implements Java
     private ObservableValue<? extends Number> observable = null;
     private ExpressionHelper<Number> helper = null;
 
+    @SuppressWarnings("removal")
+    private final AccessControlContext acc = AccessController.getContext();
+
     JavaBeanDoubleProperty(PropertyDescriptor<Number> descriptor, Object bean) {
         this.descriptor = descriptor;
         this.listener = descriptor.new Listener(bean, this);
@@ -106,16 +113,19 @@ public final class JavaBeanDoubleProperty extends DoubleProperty implements Java
      * property throws an {@code IllegalAccessException} or an
      * {@code InvocationTargetException}.
      */
+    @SuppressWarnings("removal")
     @Override
     public double get() {
-        try {
-            return ((Number)MethodHelper.invoke(
-                descriptor.getGetter(), getBean(), (Object[])null)).doubleValue();
-        } catch (IllegalAccessException e) {
-            throw new UndeclaredThrowableException(e);
-        } catch (InvocationTargetException e) {
-            throw new UndeclaredThrowableException(e);
-        }
+        return AccessController.doPrivileged((PrivilegedAction<Double>) () -> {
+            try {
+                return ((Number)MethodHelper.invoke(
+                    descriptor.getGetter(), getBean(), (Object[])null)).doubleValue();
+            } catch (IllegalAccessException e) {
+                throw new UndeclaredThrowableException(e);
+            } catch (InvocationTargetException e) {
+                throw new UndeclaredThrowableException(e);
+            }
+        }, acc);
     }
 
     /**
@@ -125,19 +135,24 @@ public final class JavaBeanDoubleProperty extends DoubleProperty implements Java
      * property throws an {@code IllegalAccessException} or an
      * {@code InvocationTargetException}.
      */
+    @SuppressWarnings("removal")
     @Override
     public void set(final double value) {
         if (isBound()) {
             throw new RuntimeException("A bound value cannot be set.");
         }
-        try {
-            MethodHelper.invoke(descriptor.getSetter(), getBean(), new Object[] {value});
-            ExpressionHelper.fireValueChangedEvent(helper);
-        } catch (IllegalAccessException e) {
-            throw new UndeclaredThrowableException(e);
-        } catch (InvocationTargetException e) {
-            throw new UndeclaredThrowableException(e);
-        }
+
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            try {
+                MethodHelper.invoke(descriptor.getSetter(), getBean(), new Object[] {value});
+                ExpressionHelper.fireValueChangedEvent(helper);
+            } catch (IllegalAccessException e) {
+                throw new UndeclaredThrowableException(e);
+            } catch (InvocationTargetException e) {
+                throw new UndeclaredThrowableException(e);
+            }
+            return null;
+        }, acc);
     }
 
     /**

@@ -25,6 +25,8 @@
 
 package com.sun.javafx.logging;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,12 +54,15 @@ class PrintLogger extends Logger {
      * the threshold, then it is logged, otherwise an abbreviated representation including
      * only the time of the pulse is logged.
      */
-    private static long THRESHOLD = Integer.getInteger("javafx.pulseLogger.threshold", 17);
+    @SuppressWarnings("removal")
+    private static long THRESHOLD = AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Integer.getInteger("javafx.pulseLogger.threshold", 17));
 
     /**
      * Optionally exit after a given number of pulses
      */
-    private static final int EXIT_ON_PULSE = Integer.getInteger("javafx.pulseLogger.exitOnPulse", 0);
+    @SuppressWarnings("removal")
+    private static final int EXIT_ON_PULSE =
+            AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Integer.getInteger("javafx.pulseLogger.exitOnPulse", 0));
 
     /**
      * We have a simple counter that keeps track of the current pulse number.

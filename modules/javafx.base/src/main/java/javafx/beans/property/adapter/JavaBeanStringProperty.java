@@ -37,6 +37,10 @@ import javafx.beans.value.ObservableValue;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 
+import java.security.AccessController;
+import java.security.AccessControlContext;
+import java.security.PrivilegedAction;
+
 /**
  * A {@code JavaBeanStringProperty} provides an adapter between a regular
  * Java Bean property of type {@code String} and a JavaFX
@@ -92,6 +96,9 @@ public final class JavaBeanStringProperty extends StringProperty implements Java
     private ObservableValue<? extends String> observable = null;
     private ExpressionHelper<String> helper = null;
 
+    @SuppressWarnings("removal")
+    private final AccessControlContext acc = AccessController.getContext();
+
     JavaBeanStringProperty(PropertyDescriptor<String> descriptor, Object bean) {
         this.descriptor = descriptor;
         this.listener = descriptor.new Listener(bean, this);
@@ -106,15 +113,18 @@ public final class JavaBeanStringProperty extends StringProperty implements Java
      * property throws an {@code IllegalAccessException} or an
      * {@code InvocationTargetException}.
      */
+    @SuppressWarnings("removal")
     @Override
     public String get() {
-        try {
-            return (String)MethodHelper.invoke(descriptor.getGetter(), getBean(), (Object[])null);
-        } catch (IllegalAccessException e) {
-            throw new UndeclaredThrowableException(e);
-        } catch (InvocationTargetException e) {
-            throw new UndeclaredThrowableException(e);
-        }
+        return AccessController.doPrivileged((PrivilegedAction<String>) () -> {
+            try {
+                return (String)MethodHelper.invoke(descriptor.getGetter(), getBean(), (Object[])null);
+            } catch (IllegalAccessException e) {
+                throw new UndeclaredThrowableException(e);
+            } catch (InvocationTargetException e) {
+                throw new UndeclaredThrowableException(e);
+            }
+        }, acc);
     }
 
     /**
@@ -124,19 +134,23 @@ public final class JavaBeanStringProperty extends StringProperty implements Java
      * property throws an {@code IllegalAccessException} or an
      * {@code InvocationTargetException}.
      */
+    @SuppressWarnings("removal")
     @Override
     public void set(final String value) {
         if (isBound()) {
             throw new RuntimeException("A bound value cannot be set.");
         }
-        try {
-            MethodHelper.invoke(descriptor.getSetter(), getBean(), new Object[] {value});
-            ExpressionHelper.fireValueChangedEvent(helper);
-        } catch (IllegalAccessException e) {
-            throw new UndeclaredThrowableException(e);
-        } catch (InvocationTargetException e) {
-            throw new UndeclaredThrowableException(e);
-        }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            try {
+                MethodHelper.invoke(descriptor.getSetter(), getBean(), new Object[] {value});
+                ExpressionHelper.fireValueChangedEvent(helper);
+            } catch (IllegalAccessException e) {
+                throw new UndeclaredThrowableException(e);
+            } catch (InvocationTargetException e) {
+                throw new UndeclaredThrowableException(e);
+            }
+            return null;
+        }, acc);
     }
 
     /**
