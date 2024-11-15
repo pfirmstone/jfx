@@ -63,7 +63,6 @@ public class StageHelper extends WindowHelper {
         stageAccessor.doVisibleChanged(window, visible);
     }
 
-    // TODO: JDK-8344111: Consider removing this obsolete method
     public static void initSecurityDialog(Stage stage, boolean securityDialog) {
         stageAccessor.initSecurityDialog(stage, securityDialog);
     }

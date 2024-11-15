@@ -36,6 +36,7 @@ import java.util.Set;
 import javafx.scene.image.Image;
 import javafx.util.Pair;
 
+import com.sun.javafx.tk.PermissionHelper;
 import com.sun.javafx.tk.TKClipboard;
 import com.sun.javafx.tk.Toolkit;
 
@@ -195,7 +196,12 @@ public class Clipboard {
      * @return The single system clipboard, used for cut / copy / paste operations
      */
     public static Clipboard getSystemClipboard() {
-        return getSystemClipboardImpl();
+        try {
+            PermissionHelper.checkClipboardPermission();
+            return getSystemClipboardImpl();
+        } catch (final SecurityException e) {
+            return getLocalClipboardImpl();
+        }
     }
 
     TKClipboard peer;

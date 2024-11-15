@@ -198,6 +198,12 @@ final class SocketStreamHandle {
     }
 
     private void connect() throws IOException {
+        @SuppressWarnings("removal")
+        SecurityManager securityManager = System.getSecurityManager();
+        if (securityManager != null) {
+            securityManager.checkConnect(host, port);
+        }
+
         // The proxy trial logic here is meant to mimic
         // sun.net.www.protocol.http.HttpURLConnection.plainConnect
         boolean success = false;
@@ -416,7 +422,10 @@ final class SocketStreamHandle {
         private final AtomicInteger index = new AtomicInteger(1);
 
         private CustomThreadFactory() {
-            group = Thread.currentThread().getThreadGroup();
+            @SuppressWarnings("removal")
+            SecurityManager sm = System.getSecurityManager();
+            group = (sm != null) ? sm.getThreadGroup()
+                    : Thread.currentThread().getThreadGroup();
         }
 
         @Override

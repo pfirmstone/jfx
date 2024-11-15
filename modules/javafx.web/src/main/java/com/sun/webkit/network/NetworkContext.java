@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.sun.javafx.logging.PlatformLogger;
 import com.sun.javafx.logging.PlatformLogger.Level;
 import com.sun.webkit.WebPage;
+import java.security.Permission;
 
 final class NetworkContext {
 
@@ -242,7 +243,10 @@ final class NetworkContext {
         private static final Permission modifyThreadPerm = new RuntimePermission("modifyThread");
 
         private URLLoaderThreadFactory() {
-            group = Thread.currentThread().getThreadGroup();
+            @SuppressWarnings("removal")
+            SecurityManager sm = System.getSecurityManager();
+            group = (sm != null) ? sm.getThreadGroup()
+                    : Thread.currentThread().getThreadGroup();
         }
 
         @SuppressWarnings("removal")

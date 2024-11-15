@@ -44,6 +44,7 @@ import com.sun.glass.ui.Screen;
 import com.sun.glass.utils.NativeLibLoader;
 import com.sun.javafx.PlatformUtil;
 import com.sun.javafx.text.GlyphLayout;
+import static com.sun.javafx.FXPermissions.LOAD_FONT_PERMISSION;
 
 public abstract class PrismFontFactory implements FontFactory {
 
@@ -1771,8 +1772,17 @@ public abstract class PrismFontFactory implements FontFactory {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public final boolean hasPermission() {
-        return true;
+        try {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(LOAD_FONT_PERMISSION);
+            }
+            return true;
+        } catch (SecurityException ex) {
+            return false;
+        }
     }
 
     private static class TTFilter implements FilenameFilter {

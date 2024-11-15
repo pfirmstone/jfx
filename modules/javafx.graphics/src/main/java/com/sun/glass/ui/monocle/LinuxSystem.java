@@ -28,6 +28,7 @@ package com.sun.glass.ui.monocle;
 import com.sun.glass.utils.NativeLibLoader;
 
 import java.nio.ByteBuffer;
+import java.security.Permission;
 
 /**
  * LinuxSystem provides access to Linux system calls. Except where noted, each
@@ -39,16 +40,28 @@ import java.nio.ByteBuffer;
  * LinuxSystem.getLinuxSystem().
  */
 class LinuxSystem {
+    private static Permission permission = new RuntimePermission("loadLibrary.*");
+
     private static LinuxSystem instance = new LinuxSystem();
 
     /**
-     * Obtains the single instance of LinuxSystem.
+     * Obtains the single instance of LinuxSystem. Calling this method requires
+     * the RuntimePermission "loadLibrary.*".
      *
      * loadLibrary() must be called on the LinuxSystem instance before any
      * system calls can be made using it.
      */
     static LinuxSystem getLinuxSystem() {
+        checkPermissions();
         return instance;
+    }
+
+    private static void checkPermissions() {
+        @SuppressWarnings("removal")
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkPermission(permission);
+        }
     }
 
     private LinuxSystem() {
@@ -187,6 +200,7 @@ class LinuxSystem {
      */
     static class FbVarScreenInfo extends C.Structure {
         FbVarScreenInfo() {
+            checkPermissions();
         }
         @Override
         native int sizeof();
