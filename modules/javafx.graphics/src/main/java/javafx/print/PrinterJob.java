@@ -111,11 +111,6 @@ public final class PrinterJob {
      * to initiate a printer job.
      */
     public static final PrinterJob createPrinterJob() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
         Printer printer = Printer.getDefaultPrinter();
         if (printer == null) {
             return null;
@@ -135,11 +130,6 @@ public final class PrinterJob {
      * to initiate a printer job.
      */
     public static final PrinterJob createPrinterJob(Printer printer) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
         return new PrinterJob(printer);
     }
 
