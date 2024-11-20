@@ -92,7 +92,6 @@ public abstract class Utilities {
         "sun.misc"
     );
 
-    @SuppressWarnings("removal")
     private static Object fwkInvokeWithContext(final Method method,
                                                final Object instance,
                                                final Object[] args,

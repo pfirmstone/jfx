@@ -243,9 +243,8 @@ public class WindowStage extends GlassStage {
         return style;
     }
 
-    @Override public TKScene createTKScene(boolean depthBuffer, boolean msaa, @SuppressWarnings("removal") AccessControlContext acc) {
+    @Override public TKScene createTKScene(boolean depthBuffer, boolean msaa) {
         ViewScene scene = new ViewScene(depthBuffer, msaa);
-        scene.setSecurityContext(acc);
         return scene;
     }
 

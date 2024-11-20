@@ -632,10 +632,9 @@ public final class QuantumToolkit extends Toolkit {
         }
     }
 
-    @Override public TKStage createTKStage(Window peerWindow, boolean securityDialog, StageStyle stageStyle, boolean primary, Modality modality, TKStage owner, boolean rtl, @SuppressWarnings("removal") AccessControlContext acc) {
+    @Override public TKStage createTKStage(Window peerWindow, boolean securityDialog, StageStyle stageStyle, boolean primary, Modality modality, TKStage owner, boolean rtl) {
         assertToolkitRunning();
         WindowStage stage = new WindowStage(peerWindow, securityDialog, stageStyle, modality, owner);
-        stage.setSecurityContext(acc);
         if (primary) {
             stage.setIsPrimary();
         }
@@ -704,24 +703,19 @@ public final class QuantumToolkit extends Toolkit {
         eventLoopMap = null;
     }
 
-    @Override public TKStage createTKPopupStage(Window peerWindow,
-                                                StageStyle popupStyle,
-                                                TKStage owner,
-                                                @SuppressWarnings("removal") AccessControlContext acc) {
+    @Override public TKStage createTKPopupStage(Window peerWindow, StageStyle popupStyle, TKStage owner) {
         assertToolkitRunning();
         boolean securityDialog = owner instanceof WindowStage ?
                 ((WindowStage)owner).isSecurityDialog() : false;
         WindowStage stage = new WindowStage(peerWindow, securityDialog, popupStyle, null, owner);
-        stage.setSecurityContext(acc);
         stage.setIsPopup();
         stage.init(systemMenu);
         return stage;
     }
 
-    @Override public TKStage createTKEmbeddedStage(HostInterface host, @SuppressWarnings("removal") AccessControlContext acc) {
+    @Override public TKStage createTKEmbeddedStage(HostInterface host) {
         assertToolkitRunning();
         EmbeddedStage stage = new EmbeddedStage(host);
-        stage.setSecurityContext(acc);
         return stage;
     }
 

@@ -59,6 +59,7 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -220,9 +221,7 @@ public abstract class Toolkit {
         // with a security manager cannot use this unless they have permission
         // to read system properties.
         String forcedToolkit = null;
-        try {
-            forcedToolkit = System.getProperty("javafx.toolkit");
-        } catch (SecurityException ex) {}
+        forcedToolkit = System.getProperty("javafx.toolkit");
 
         if (forcedToolkit == null) {
             forcedToolkit = tk;
@@ -372,19 +371,18 @@ public abstract class Toolkit {
 
     public abstract boolean isNestedLoopRunning();
 
-    public abstract TKStage createTKStage(Window peerWindow, boolean securityDialog, StageStyle stageStyle, boolean primary, Modality modality, TKStage owner, boolean rtl, @SuppressWarnings("removal") AccessControlContext acc);
+    public abstract TKStage createTKStage(Window peerWindow, boolean securityDialog, StageStyle stageStyle, boolean primary, Modality modality, TKStage owner, boolean rtl);
 
-    public abstract TKStage createTKPopupStage(Window peerWindow, StageStyle popupStyle, TKStage owner, @SuppressWarnings("removal") AccessControlContext acc);
-    public abstract TKStage createTKEmbeddedStage(HostInterface host, @SuppressWarnings("removal") AccessControlContext acc);
+    public abstract TKStage createTKPopupStage(Window peerWindow, StageStyle popupStyle, TKStage owner);
+    public abstract TKStage createTKEmbeddedStage(HostInterface host);
 
-    @SuppressWarnings("removal")
-    private final Map<TKPulseListener,AccessControlContext> stagePulseListeners = new WeakHashMap<>();
-    @SuppressWarnings("removal")
-    private final Map<TKPulseListener,AccessControlContext> scenePulseListeners = new WeakHashMap<>();
-    @SuppressWarnings("removal")
-    private final Map<TKPulseListener,AccessControlContext> postScenePulseListeners = new WeakHashMap<>();
-    @SuppressWarnings("removal")
-    private final Map<TKListener,AccessControlContext> toolkitListeners = new WeakHashMap<>();
+    // The following collections of listeners is weakly referenced here in order
+    // to allow garbage collection when the listeners are otherwise no longer
+    // referenced.
+    private final Set<TKPulseListener> stagePulseListeners = Collections.newSetFromMap(new WeakHashMap<>());
+    private final Set<TKPulseListener> scenePulseListeners = Collections.newSetFromMap(new WeakHashMap<>());
+    private final Set<TKPulseListener> postScenePulseListeners = Collections.newSetFromMap(new WeakHashMap<>());
+    private final Set<TKListener> toolkitListeners = Collections.newSetFromMap(new WeakHashMap<>());
 
     // The set of shutdown hooks is strongly held to avoid premature GC.
     private final Set<Runnable> shutdownHooks = new HashSet<>();
@@ -407,34 +405,28 @@ public abstract class Toolkit {
         // Stages need to be notified of pulses before scenes so the Stage can resized
         // and those changes propogated to scene before it gets its pulse to update
 
-        // Copy of listener map
-        @SuppressWarnings("removal")
-        final Map<TKPulseListener,AccessControlContext> stagePulseList =
-                new WeakHashMap<>();
-        @SuppressWarnings("removal")
-        final Map<TKPulseListener,AccessControlContext> scenePulseList =
-                new WeakHashMap<>();
-        @SuppressWarnings("removal")
-        final Map<TKPulseListener,AccessControlContext> postScenePulseList =
-                new WeakHashMap<>();
+        // Copy of listener keySet
+        final Set<TKPulseListener> stagePulseList = new HashSet<>();
+        final Set<TKPulseListener> scenePulseList = new HashSet<>();
+        final Set<TKPulseListener> postScenePulseList = new HashSet<>();
 
         synchronized (this) {
-            stagePulseList.putAll(stagePulseListeners);
-            scenePulseList.putAll(scenePulseListeners);
-            postScenePulseList.putAll(postScenePulseListeners);
+            stagePulseList.addAll(stagePulseListeners);
+            scenePulseList.addAll(scenePulseListeners);
+            postScenePulseList.addAll(postScenePulseListeners);
         }
-        for (@SuppressWarnings("removal") Map.Entry<TKPulseListener,AccessControlContext> entry : stagePulseList.entrySet()) {
-            runPulse(entry.getKey(), entry.getValue());
+        for (TKPulseListener listener : stagePulseList) {
+            runPulse(listener);
         }
-        for (@SuppressWarnings("removal") Map.Entry<TKPulseListener,AccessControlContext> entry : scenePulseList.entrySet()) {
-            runPulse(entry.getKey(), entry.getValue());
+        for (TKPulseListener listener : scenePulseList) {
+            runPulse(listener);
         }
-        for (@SuppressWarnings("removal") Map.Entry<TKPulseListener,AccessControlContext> entry : postScenePulseList.entrySet()) {
-            runPulse(entry.getKey(), entry.getValue());
+        for (TKPulseListener listener : postScenePulseList) {
+            runPulse(listener);
         }
 
         if (lastTkPulseListener != null) {
-            runPulse(lastTkPulseListener, lastTkPulseAcc);
+            runPulse(lastTkPulseListener);
         }
     }
     public void addStageTkPulseListener(TKPulseListener listener) {
@@ -442,9 +434,7 @@ public abstract class Toolkit {
             return;
         }
         synchronized (this) {
-            @SuppressWarnings("removal")
-            AccessControlContext acc = AccessController.getContext();
-            stagePulseListeners.put(listener, acc);
+            stagePulseListeners.add(listener);
         }
     }
     public void removeStageTkPulseListener(TKPulseListener listener) {
@@ -457,9 +447,7 @@ public abstract class Toolkit {
             return;
         }
         synchronized (this) {
-            @SuppressWarnings("removal")
-            AccessControlContext acc = AccessController.getContext();
-            scenePulseListeners.put(listener, acc);
+            scenePulseListeners.add(listener);
         }
     }
     public void removeSceneTkPulseListener(TKPulseListener listener) {
@@ -472,9 +460,7 @@ public abstract class Toolkit {
             return;
         }
         synchronized (this) {
-            @SuppressWarnings("removal")
-            AccessControlContext acc = AccessController.getContext();
-            postScenePulseListeners.put(listener, acc);
+            postScenePulseListeners.add(listener);
         }
     }
     public void removePostSceneTkPulseListener(TKPulseListener listener) {
@@ -487,9 +473,7 @@ public abstract class Toolkit {
         if (listener == null) {
             return;
         }
-        @SuppressWarnings("removal")
-        AccessControlContext acc = AccessController.getContext();
-        toolkitListeners.put(listener, acc);
+        toolkitListeners.add(listener);
     }
 
     public void removeTkListener(TKListener listener) {
@@ -497,11 +481,8 @@ public abstract class Toolkit {
     }
 
     private TKPulseListener lastTkPulseListener = null;
-    @SuppressWarnings("removal")
-    private AccessControlContext lastTkPulseAcc = null;
-    @SuppressWarnings("removal")
+
     public void setLastTkPulseListener(TKPulseListener listener) {
-        lastTkPulseAcc = AccessController.getContext();
         lastTkPulseListener = listener;
     }
 
@@ -549,7 +530,7 @@ public abstract class Toolkit {
     }
 
     public void notifyLastNestedLoopExited() {
-        for (TKListener listener: toolkitListeners.keySet()) {
+        for (TKListener listener: toolkitListeners) {
             listener.exitedLastNestedLoop();
         }
     }
