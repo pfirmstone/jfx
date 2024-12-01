@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 package com.sun.webkit;
 
 import java.io.StringReader;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
@@ -40,8 +43,13 @@ import org.xml.sax.InputSource;
 public final class WebPage {
 
     static {
-        System.out.println ("[JVDBG] I will load the webview system library");
-        System.loadLibrary("webview");
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+System.out.println ("[JVDBG] I will load the webview system library");
+                System.loadLibrary("webview");
+                return null;
+            }
+        });
     }
     public static int DND_DST_DROP;
     public static int DND_SRC_DROP;
@@ -176,6 +184,10 @@ public final class WebPage {
     }
 
     public void dispatchInspectorMessageFromFrontend(String message) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public AccessControlContext getAccessControlContext() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
