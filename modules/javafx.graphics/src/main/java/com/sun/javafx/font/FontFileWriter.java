@@ -53,9 +53,6 @@ class FontFileWriter implements FontConstants {
     RandomAccessFile raFile;
 
     public FontFileWriter() {
-        if (!hasTempPermission()) {
-            tracker = FontTracker.getTracker();
-        }
     }
 
     protected void setLength(int size) throws IOException {

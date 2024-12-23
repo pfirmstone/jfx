@@ -190,10 +190,6 @@ public class Stage extends Window {
                 ((Stage) window).doVisibleChanged(visible);
             }
 
-            @Override public void initSecurityDialog(Stage stage, boolean securityDialog) {
-                stage.initSecurityDialog(securityDialog);
-            }
-
             @Override
             public void setPrimary(Stage stage, boolean primary) {
                 stage.setPrimary(primary);

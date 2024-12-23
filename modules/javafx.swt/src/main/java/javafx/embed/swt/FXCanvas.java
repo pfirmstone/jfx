@@ -751,7 +751,7 @@ public class FXCanvas extends Canvas {
                 me.x, me.y,
                 los.x, los.y,
                 shift, control, alt, meta,
-                false);  // RT-32990: popup trigger not implemented
+                false);  // JDK-8089491: popup trigger not implemented
     }
 
     double totalScrollX = 0;
@@ -1057,7 +1057,7 @@ public class FXCanvas extends Canvas {
         } else {
             pixelsBuf = IntBuffer.allocate((int)Math.ceil(pWidth * newScaleFactor) *
                                            (int)Math.ceil(pHeight * newScaleFactor));
-            // The bg color may show through on resize. See RT-34380.
+            // The bg color may show through on resize. See JDK-8122273.
             RGB rgb = getBackground().getRGB();
             Arrays.fill(pixelsBuf.array(), rgb.red << 16 | rgb.green << 8 | rgb.blue);
         }
@@ -1430,7 +1430,7 @@ public class FXCanvas extends Canvas {
 
         @Override
         public boolean traverseFocusOut(boolean bln) {
-            // RT-18085: not implemented
+            // JDK-8120706: not implemented
             return true;
         }
 
@@ -1498,13 +1498,13 @@ public class FXCanvas extends Canvas {
 
         @Override
         public boolean grabFocus() {
-            // RT-27949: not implemented
+            // JDK-8094861: not implemented
             return true;
         }
 
         @Override
         public void ungrabFocus() {
-            // RT-27949: not implemented
+            // JDK-8094861: not implemented
         }
     }
 }
