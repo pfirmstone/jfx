@@ -67,6 +67,10 @@ public class PrismFontLoader extends FontLoader {
     private void loadEmbeddedFonts() {
         if (!embeddedFontsLoaded) {
             FontFactory fontFactory = getFontFactoryFromPipeline();
+            if (!fontFactory.hasPermission()) {
+                embeddedFontsLoaded = true;
+                return;
+            }
             Properties map = loadEmbeddedFontDefinitions();
             Enumeration<?> names = map.keys();
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
