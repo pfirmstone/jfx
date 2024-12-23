@@ -31,4 +31,8 @@ public class StageShim {
         return stage.isPrimary();
     }
 
+    public static boolean isSecurityDialog(Stage stage) {
+        return stage.isSecurityDialog();
+    }
+
 }
