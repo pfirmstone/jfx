@@ -39,13 +39,6 @@ class JSObject extends netscape.javascript.JSObject {
     static final int JS_DOM_NODE_OBJECT  = 1;
     static final int JS_DOM_WINDOW_OBJECT  = 2;
 
-    // Dummy object used as a placeholder for the former access control context.
-    // This is passed to the native WebKit code where it is stored (as an opaque
-    // object) and later passed back to Java code.
-    // We do this, rather than removing the parameter, in order to keep the
-    // native WebKit code the same across different release families.
-    private static final Object DUMMY_ACC = new Object();
-
     private final long peer;     // C++ peer - now it is the DOMObject instance
     private final int peer_type; // JS_XXXX const
 
@@ -91,10 +84,12 @@ class JSObject extends netscape.javascript.JSObject {
     private static native Object getMemberImpl(long peer, int peer_type,
                                                String name);
 
+    @SuppressWarnings("removal")
     @Override
     public void setMember(String name, Object value) throws JSException {
         Invoker.getInvoker().checkEventThread();
-        setMemberImpl(peer, peer_type, name, value, DUMMY_ACC);
+        setMemberImpl(peer, peer_type, name, value,
+                      AccessController.getContext());
     }
     private static native void setMemberImpl(long peer, int peer_type,
                                              String name, Object value,
@@ -116,19 +111,23 @@ class JSObject extends netscape.javascript.JSObject {
     private static native Object getSlotImpl(long peer, int peer_type,
                                              int index);
 
+    @SuppressWarnings("removal")
     @Override
     public void setSlot(int index, Object value) throws JSException {
         Invoker.getInvoker().checkEventThread();
-        setSlotImpl(peer, peer_type, index, value, DUMMY_ACC);
+        setSlotImpl(peer, peer_type, index, value,
+                    AccessController.getContext());
     }
     private static native void setSlotImpl(long peer, int peer_type,
                                            int index, Object value,
                                            @SuppressWarnings("removal") AccessControlContext acc);
 
+    @SuppressWarnings("removal")
     @Override
     public Object call(String methodName, Object... args) throws JSException {
         Invoker.getInvoker().checkEventThread();
-        return callImpl(peer, peer_type, methodName, args, DUMMY_ACC);
+        return callImpl(peer, peer_type, methodName, args,
+                        AccessController.getContext());
     }
     private static native Object callImpl(long peer, int peer_type,
                                           String methodName, Object[] args,

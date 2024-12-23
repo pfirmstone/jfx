@@ -25,6 +25,9 @@
 
 package com.sun.javafx.tk.quantum;
 
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,6 +54,9 @@ abstract class GlassStage implements TKStage {
     private boolean visible;
 
     private boolean important = true;
+
+    @SuppressWarnings("removal")
+    private AccessControlContext accessCtrlCtx = null;
 
     protected static final AtomicReference<GlassStage> activeFSWindow = new AtomicReference<>();
 

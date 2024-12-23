@@ -51,6 +51,9 @@ public abstract class Accessible {
 
         public void executeAction(AccessibleAction action, Object... parameters) {
         }
+
+        @SuppressWarnings("removal")
+        public abstract AccessControlContext getAccessControlContext();
     }
 
     public EventHandler getEventHandler() {

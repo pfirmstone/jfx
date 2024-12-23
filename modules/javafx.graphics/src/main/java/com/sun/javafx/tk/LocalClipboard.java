@@ -25,6 +25,7 @@
 
 package com.sun.javafx.tk;
 
+import java.security.AccessControlContext;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +41,11 @@ final class LocalClipboard implements TKClipboard {
 
     public LocalClipboard() {
         values = new HashMap<>();
+    }
+
+    @Override
+    public void setSecurityContext(@SuppressWarnings("removal") final AccessControlContext ctx) {
+        // ctx not needed
     }
 
     @Override

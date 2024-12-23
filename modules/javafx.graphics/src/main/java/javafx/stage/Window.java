@@ -25,6 +25,8 @@
 
 package javafx.stage;
 
+import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.util.HashMap;
 
 import javafx.application.Platform;
@@ -206,6 +208,12 @@ public class Window implements EventTarget {
                     public ReadOnlyObjectProperty<Screen> screenProperty(Window window) {
                         return window.screenProperty();
                     }
+
+                    @SuppressWarnings("removal")
+                    @Override
+                    public AccessControlContext getAccessControlContext(Window window) {
+                        return window.acc;
+                    }
                 });
     }
 
@@ -225,6 +233,9 @@ public class Window implements EventTarget {
 
         return unmodifiableWindows;
     }
+
+    @SuppressWarnings("removal")
+    final AccessControlContext acc = AccessController.getContext();
 
     /**
      * Constructor for subclasses to call.

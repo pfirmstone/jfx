@@ -25,6 +25,7 @@
 
 package test.com.sun.javafx.pgstub;
 
+import java.security.AccessControlContext;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -47,7 +48,7 @@ public class StubStage implements TKStage {
     }
 
     @Override
-    public TKScene createTKScene(boolean depthBuffer, boolean msaa) {
+    public TKScene createTKScene(boolean depthBuffer, boolean msaa, @SuppressWarnings("removal") AccessControlContext acc) {
         return new StubScene();
     }
 

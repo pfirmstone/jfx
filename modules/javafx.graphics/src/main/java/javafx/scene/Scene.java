@@ -185,6 +185,9 @@ public class Scene implements EventTarget {
 
     private EnumSet<DirtyBits> dirtyBits = EnumSet.noneOf(DirtyBits.class);
 
+    @SuppressWarnings("removal")
+    final AccessControlContext acc = AccessController.getContext();
+
     private Camera defaultCamera;
 
     /**
@@ -829,7 +832,7 @@ public class Scene implements EventTarget {
         setAllowPGAccess(true);
 
         Toolkit tk = Toolkit.getToolkit();
-        peer = windowPeer.createTKScene(isDepthBufferInternal(), getAntiAliasingInternal());
+        peer = windowPeer.createTKScene(isDepthBufferInternal(), getAntiAliasingInternal(), acc);
         PerformanceTracker.logEvent("Scene.initPeer TKScene created");
         peer.setTKSceneListener(new ScenePeerListener());
         peer.setTKScenePaintListener(new ScenePeerPaintListener());
@@ -6443,6 +6446,11 @@ public class Scene implements EventTarget {
         if (accessible == null) {
             accessible = Application.GetApplication().createAccessible();
             accessible.setEventHandler(new Accessible.EventHandler() {
+                @SuppressWarnings("removal")
+                @Override public AccessControlContext getAccessControlContext() {
+                    return getPeer().getAccessControlContext();
+                }
+
                 @Override public Object getAttribute(AccessibleAttribute attribute,
                                                      Object... parameters) {
                     switch (attribute) {
